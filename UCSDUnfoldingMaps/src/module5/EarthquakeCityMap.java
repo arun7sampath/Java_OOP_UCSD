@@ -146,6 +146,14 @@ public class EarthquakeCityMap extends PApplet {
 	private void selectMarkerIfHover(List<Marker> markers)
 	{
 		// TODO: Implement this method
+		for(Marker marker : markers){
+			if(marker.isInside(map, mouseX, mouseY) == true
+					&& lastSelected == null){
+				lastSelected = (CommonMarker) marker;
+				lastSelected.setSelected(true);
+				return;
+			}
+		}
 	}
 	
 	/** The event handler for mouse clicks
@@ -159,8 +167,69 @@ public class EarthquakeCityMap extends PApplet {
 		// TODO: Implement this method
 		// Hint: You probably want a helper method or two to keep this code
 		// from getting too long/disorganized
+		if(lastClicked == null){
+			selectMarkerIfClicked(quakeMarkers);
+			selectMarkerIfClicked(cityMarkers);
+			checkMarkersInRange();
+		}
+		else{
+			lastClicked.setClicked(false);
+			lastClicked = null;
+			unhideMarkers();
+		}
 	}
 	
+	private void checkMarkersInRange(){
+		
+		if(lastClicked == null)
+			return;
+		
+		double dist, threatCircleKm;
+		
+		if(lastClicked.getProperty("magnitude") != null)
+		{
+			threatCircleKm = ((EarthquakeMarker)lastClicked).threatCircle();
+			for(Marker marker : cityMarkers){
+				dist = lastClicked.getDistanceTo(marker.getLocation());
+				/*System.out.println(marker.getProperty("name").toString() + 
+						lastClicked.getProperty("title").toString() + " Distance: " + dist +
+						" threatCircle: " + threatCircleKm);*/
+				if(dist > threatCircleKm)
+					marker.setHidden(true);
+			}
+			for(Marker marker : quakeMarkers){
+				marker.setHidden(true);
+			}
+			lastClicked.setHidden(false);
+		}
+		else{
+			for(Marker marker : quakeMarkers){
+				threatCircleKm = ((EarthquakeMarker)marker).threatCircle();
+				dist = marker.getDistanceTo(lastClicked.getLocation());
+				/*System.out.println(lastClicked.getProperty("name").toString() + 
+						marker.getProperty("title").toString() + " Distance: " + dist + 
+						" threatCircle: " + threatCircleKm);*/
+				if(dist > threatCircleKm)
+					marker.setHidden(true);
+			}
+			for(Marker marker : cityMarkers){
+				marker.setHidden(true);
+			}
+			lastClicked.setHidden(false);
+		}
+	}
+	
+	private void selectMarkerIfClicked(List<Marker> markers)
+	{
+		for(Marker marker : markers){
+			if(marker.isInside(map, mouseX, mouseY) == true
+					&& lastClicked == null){
+				lastClicked = (CommonMarker) marker;
+				lastClicked.setClicked(true);
+				return;
+			}
+		}
+	}
 	
 	// loop over and unhide all markers
 	private void unhideMarkers() {

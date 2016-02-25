@@ -1,6 +1,7 @@
 package module5;
 
 import de.fhpotsdam.unfolding.data.PointFeature;
+import processing.core.PConstants;
 import processing.core.PGraphics;
 
 /** Implements a visual marker for earthquakes on an earthquake map
@@ -94,6 +95,13 @@ public abstract class EarthquakeMarker extends CommonMarker
 	public void showTitle(PGraphics pg, float x, float y)
 	{
 		// TODO: Implement this method
+		pg.fill(255, 250, 240);
+		pg.rectMode(PConstants.CORNER);
+		pg.rect(x, y, pg.textWidth(getTitle()) + 5, 15);
+		pg.fill(0, 0, 0);
+		pg.textSize(10);
+		pg.textAlign(PConstants.LEFT, PConstants.CENTER);
+		pg.text(getTitle(), x, y + 5);
 		
 	}
 

@@ -49,12 +49,13 @@ public abstract class EarthquakeMarker extends SimplePointMarker
 		float magnitude = Float.parseFloat(properties.get("magnitude").toString());
 		properties.put("radius", 2*magnitude );
 		setProperties(properties);
-		this.radius = 1.75f*getMagnitude();
+		this.radius = 2.5f*getMagnitude();
 	}
 	
 
 	// calls abstract method drawEarthquake and then checks age and draws X if needed
 	public void draw(PGraphics pg, float x, float y) {
+		String age;
 		// save previous styling
 		pg.pushStyle();
 			
@@ -65,7 +66,13 @@ public abstract class EarthquakeMarker extends SimplePointMarker
 		drawEarthquake(pg, x, y);
 		
 		// OPTIONAL TODO: draw X over marker if within past day		
-		
+		age = getAge();
+		if((age.compareTo("Past Day") & 
+				age.compareTo("Past Hour")) == 0){
+			pg.stroke(0);
+			pg.line(x - radius/2, y - radius/2, x + radius/2, y + radius/2);
+			pg.line(x - radius/2, y + radius/2, x + radius/2, y - radius/2);
+		}
 		// reset to previous styling
 		pg.popStyle();
 		
@@ -77,6 +84,16 @@ public abstract class EarthquakeMarker extends SimplePointMarker
 	// You might find the getters below helpful.
 	private void colorDetermine(PGraphics pg) {
 		//TODO: Implement this method
+		float depth = getDepth();
+		if(depth < THRESHOLD_INTERMEDIATE){
+			pg.fill(255, 255, 0);
+		}
+		else if(depth > THRESHOLD_DEEP){
+			pg.fill(255, 0, 0);
+		}
+		else{
+			pg.fill(0, 0, 255);
+		}
 	}
 	
 	
@@ -95,6 +112,10 @@ public abstract class EarthquakeMarker extends SimplePointMarker
 	public String getTitle() {
 		return (String) getProperty("title");	
 		
+	}
+	
+	public String getAge() {
+		return (String) getProperty("age");
 	}
 	
 	public float getRadius() {

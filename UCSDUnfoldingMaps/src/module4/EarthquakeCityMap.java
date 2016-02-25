@@ -1,7 +1,8 @@
 package module4;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
+import javax.swing.plaf.metal.OceanTheme;
 
 import de.fhpotsdam.unfolding.UnfoldingMap;
 import de.fhpotsdam.unfolding.data.Feature;
@@ -11,6 +12,7 @@ import de.fhpotsdam.unfolding.geo.Location;
 import de.fhpotsdam.unfolding.marker.AbstractShapeMarker;
 import de.fhpotsdam.unfolding.marker.Marker;
 import de.fhpotsdam.unfolding.marker.MultiMarker;
+import de.fhpotsdam.unfolding.marker.SimplePointMarker;
 import de.fhpotsdam.unfolding.providers.Google;
 import de.fhpotsdam.unfolding.providers.MBTilesMapProvider;
 import de.fhpotsdam.unfolding.utils.MapUtils;
@@ -23,6 +25,34 @@ import processing.core.PApplet;
  * @author Your name here
  * Date: July 17, 2015
  * */
+
+class MyHashMap extends TreeMap<String, Integer>{
+	// You can ignore this.  It's to keep eclipse from generating a warning.
+	private static final long serialVersionUID = 1L;
+		
+	TreeMap<String, Integer> quakeHM;
+	
+	public MyHashMap(){
+		quakeHM = new TreeMap<String, Integer> ();
+	}
+	
+	public void addToHM(String country){
+		Integer value;
+		if((value = quakeHM.get(country)) != null)
+			quakeHM.put(country, value + 1);
+		else
+			quakeHM.put(country, 1);
+	}
+	
+	public void printHash(){
+		Set<Map.Entry<String, Integer>> set = quakeHM.entrySet();
+		for(Map.Entry<String, Integer> map : set){
+			System.out.println(map.getKey() + ": " + map.getValue());
+		}
+	}
+}
+
+
 public class EarthquakeCityMap extends PApplet {
 	
 	// We will use member variables, instead of local variables, to store the data
@@ -80,7 +110,7 @@ public class EarthquakeCityMap extends PApplet {
 		//earthquakesURL = "test2.atom";
 		
 		// WHEN TAKING THIS QUIZ: Uncomment the next line
-		//earthquakesURL = "quiz1.atom";
+		earthquakesURL = "quiz1.atom";
 		
 		
 		// (2) Reading in earthquake data and geometric properties
@@ -130,28 +160,41 @@ public class EarthquakeCityMap extends PApplet {
 	}
 	
 	// helper method to draw key in GUI
-	// TODO: Update this method as appropriate
 	private void addKey() {	
 		// Remember you can use Processing's graphics methods here
 		fill(255, 250, 240);
 		rect(25, 50, 150, 250);
+		fill(color(255, 0, 0));
+		triangle(50, 96, 46, 104, 54, 104);
+		fill(255);
+		ellipse(50, 125, 10, 10);
+		//rectMode(CENTER);
+		rect(45, 150, 10, 10);
+		ellipse(50, 275, 10, 10);
+		line(45, 270, 55, 280);
+		line(45, 280, 55, 270);
+		
+		fill(color(255, 255, 0));
+		ellipse(50, 200, 10, 10);
+		fill(color(0, 0, 255));
+		ellipse(50, 225, 10, 10);
+		fill(color(255, 0, 0));
+		ellipse(50, 250, 10, 10);
 		
 		fill(0);
 		textAlign(LEFT, CENTER);
 		textSize(12);
 		text("Earthquake Key", 50, 75);
-		
-		fill(color(255, 0, 0));
-		ellipse(50, 125, 15, 15);
-		fill(color(255, 255, 0));
-		ellipse(50, 175, 10, 10);
-		fill(color(0, 0, 255));
-		ellipse(50, 225, 5, 5);
-		
 		fill(0, 0, 0);
-		text("5.0+ Magnitude", 75, 125);
-		text("4.0+ Magnitude", 75, 175);
-		text("Below 4.0", 75, 225);
+		text("City Marker", 75, 100);
+		text("Land Quake", 75, 125);
+		text("Ocean Quake", 75, 150);
+		text("Size ~ Magnitude", 50, 175);
+		text("Shallow", 75, 200);
+		text("Intermediate", 75, 225);
+		text("Deep", 75, 250);
+		text("Past Hour", 75, 275);
+		
 	}
 
 	
@@ -162,11 +205,10 @@ public class EarthquakeCityMap extends PApplet {
 	// set this "country" property already.  Otherwise it returns false.
 	private boolean isLand(PointFeature earthquake) {
 		
-		// IMPLEMENT THIS: loop over all countries to check if location is in any of them
-		
-		// TODO: Implement this method using the helper method isInCountry
-		
-		// not inside any country
+		for(Marker country : countryMarkers){
+			if(isInCountry(earthquake, country))
+				return true;
+		}
 		return false;
 	}
 	
@@ -178,7 +220,16 @@ public class EarthquakeCityMap extends PApplet {
 	// And LandQuakeMarkers have a "country" property set.
 	private void printQuakes() 
 	{
-		// TODO: Implement this method
+		int oceanQuakes = 0;
+		MyHashMap quakeHash = new MyHashMap();
+		for(Marker marker : quakeMarkers){
+			if(((EarthquakeMarker)marker).isOnLand())
+				quakeHash.addToHM((String)marker.getProperty("country"));
+			else
+				oceanQuakes++;
+		}
+		quakeHash.printHash();
+		System.out.println("OCEAN QUAKES: " + oceanQuakes);
 	}
 	
 	
