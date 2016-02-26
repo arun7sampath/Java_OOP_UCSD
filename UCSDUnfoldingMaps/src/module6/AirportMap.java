@@ -14,6 +14,7 @@ import de.fhpotsdam.unfolding.marker.SimpleLinesMarker;
 import de.fhpotsdam.unfolding.marker.SimplePointMarker;
 import de.fhpotsdam.unfolding.providers.Google;
 import de.fhpotsdam.unfolding.utils.MapUtils;
+import de.fhpotsdam.unfolding.utils.ScreenPosition;
 import de.fhpotsdam.unfolding.geo.Location;
 import parsing.ParseFeed;
 import processing.core.PApplet;
@@ -32,12 +33,14 @@ public class AirportMap extends PApplet {
 	List<Feature> countries;
 	List <Marker> countryMarkers;
 	
-	private Marker lastSelected;
+	private AirportMarker lastSelected;
 	private Marker lastClicked;
-	private AirportMarker tempAirport;
 	
 	public void setup() {
 		// setting up PAppler
+		AirportMarker m1, m2;
+		Location srcLocation, dstLocation;
+		
 		size(800,600, OPENGL);
 		
 		// setting up map and default events
@@ -58,15 +61,15 @@ public class AirportMap extends PApplet {
 		
 		// create markers from features
 		for(PointFeature feature : features) {
-			AirportMarker m = new AirportMarker(feature);
+			m1 = new AirportMarker(feature);
 	
-			m.setRadius(5);
-			m.setHidden(true);
-			airportList.add(m);
+			m1.setRadius(5);
+			m1.setHidden(true);
+			airportList.add(m1);
 			
 			// put airport in hashmap with OpenFlights unique id for key
 			airports.put(Integer.parseInt(feature.getId()), feature.getLocation());
-			airportMarkers.put(Integer.parseInt(feature.getId()), m);
+			airportMarkers.put(Integer.parseInt(feature.getId()), m1);
 		}
 		
 		
@@ -81,62 +84,42 @@ public class AirportMap extends PApplet {
 			
 			// get locations for airports on route
 			if(airports.containsKey(source) && airports.containsKey(dest)) {
-				route.addLocation(airports.get(source));
-				route.addLocation(airports.get(dest));
+				srcLocation = airports.get(source);
+				dstLocation = airports.get(dest);
+				route.addLocation(srcLocation);
+				route.addLocation(dstLocation);
+				
+				m1 = (AirportMarker)(airportMarkers.get(source));
+				m2 = (AirportMarker)(airportMarkers.get(dest));
+				
+				m1.connectedCities.add(m2);
+				m2.connectedCities.add(m1);
+				
+				SimpleLinesMarker sl = new SimpleLinesMarker(route.getLocations(), route.getProperties());
+				sl.setHidden(true);
+				
+				m1.routes.add(sl);
+				m2.routes.add(sl);
+				
+				//System.out.println(sl.getProperties());
+				//UNCOMMENT IF YOU WANT TO SEE ALL ROUTES
+				routeList.add(sl);	
 			}
 			
-			SimpleLinesMarker sl = new SimpleLinesMarker(route.getLocations(), route.getProperties());
-		
-			//System.out.println(sl.getProperties());
-			if(airportMarkers.containsKey(source) && airportMarkers.containsKey(dest)){
-				tempAirport = (AirportMarker) airportMarkers.get(source);
-				tempAirport.routes.add(sl);
-			}
-			//UNCOMMENT IF YOU WANT TO SEE ALL ROUTES
-			routeList.add(sl);
 		}
 		
 		
 		
 		//UNCOMMENT IF YOU WANT TO SEE ALL ROUTES
-		//map.addMarkers(routeList);
 		//map.addMarkers(countryMarkers);
+		map.addMarkers(routeList);
 		map.addMarkers(airportList);
 		
 	}
 	
 	public void draw() {
 		background(0);
-		markRoutesforAirports();
 		map.draw();
-	}
-	
-	/** Event handler that gets called automatically when the 
-	 * mouse moves.
-	 */
-	@Override
-	public void mouseMoved()
-	{
-		// clear the last selection
-		if (lastSelected != null) {
-			if(lastSelected == lastClicked)
-				lastClicked = null;
-			lastSelected.setSelected(false);
-			lastSelected = null;
-			for(Marker airport : airportList){
-				airport.setHidden(true);
-				airport.setSelected(false);
-			}
-		
-		}
-		for(Marker mark : countryMarkers){
-			if(mark.isInside(map, mouseX, mouseY) == true){
-				lastSelected = mark;
-				lastSelected.setSelected(true);
-				markAirportsbyCountry(mark, false);
-			}
-		}
-		//loop();
 	}
 	
 	/** Event handler that gets called automatically when the 
@@ -145,26 +128,50 @@ public class AirportMap extends PApplet {
 	@Override
 	public void mouseClicked()
 	{
-		if(lastClicked == null){
-			for(Marker mark : countryMarkers){
-				if(mark.isInside(map, mouseX, mouseY) == true){
-					lastClicked = mark;
-				}
-			}
-				markAirportsbyCountry(lastClicked, true);
-		}
-		else{
-			if(lastSelected == lastClicked)
-				lastSelected = null;
-			lastClicked.setSelected(false);
+		// clear the last selection
+		if (lastClicked != null) {
 			lastClicked = null;
 			for(Marker airport : airportList){
 				airport.setHidden(true);
 				airport.setSelected(false);
 			}
+		
+		}
+		else{
+			for(Marker mark : countryMarkers){
+				if(mark.isInside(map, mouseX, mouseY) == true){
+					lastClicked = mark;
+					markAirportsbyCountry(mark, false);
+					return;
+				}
+			}
 		}
 	}
 	
+	/** Event handler that gets called automatically when the 
+	 * mouse moves.
+	 */
+	@Override
+	public void mouseMoved()
+	{
+		if (lastSelected != null) {
+			lastSelected.setSelected(false);
+			lastSelected.drawRoutes(true);
+			lastSelected = null;
+		}
+		for(Marker airport : airportList){
+			if(airport.isInside(map, mouseX, mouseY) && 
+					airport.isHidden() == false){
+				lastSelected = (AirportMarker)airport;
+//				lastSelected.setHidden(false);
+				lastSelected.setSelected(true);
+				lastSelected.selectConnectedCities(false);
+				return;
+			}
+		}
+	}
+	
+
 	private void markAirportsbyCountry(Marker country, boolean selected){
 		
 		for(Marker airport : airportList){
@@ -182,14 +189,4 @@ public class AirportMap extends PApplet {
 		}	
 	}
 	
-	private void markRoutesforAirports(){
-		for(Marker airport : airportList){
-			if(airport.isHidden() == false && airport.isSelected() == true){
-				tempAirport = (AirportMarker)airport;
-				for(SimpleLinesMarker s : tempAirport.routes){
-					map.addMarkers(s);
-				}
-			}
-		}
-	}
 }
