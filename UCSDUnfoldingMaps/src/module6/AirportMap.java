@@ -44,7 +44,7 @@ public class AirportMap extends PApplet {
 		size(800,600, OPENGL);
 		
 		// setting up map and default events
-		map = new UnfoldingMap(this, 50, 50, 750, 550, new Google.GoogleMapProvider());
+		map = new UnfoldingMap(this, 200, 50, 750, 600, new Google.GoogleMapProvider());
 		MapUtils.createDefaultEventDispatcher(this, map);
 		
 		// Load country polygons and adds them as markers
@@ -118,8 +118,9 @@ public class AirportMap extends PApplet {
 	}
 	
 	public void draw() {
-		background(0);
+		background(125);
 		map.draw();
+		addKey();
 	}
 	
 	/** Event handler that gets called automatically when the 
@@ -187,6 +188,29 @@ public class AirportMap extends PApplet {
 				airport.setSelected(selected);
 			}
 		}	
+	}
+	
+	// helper method to draw key in GUI
+	private void addKey() {	
+		// Remember you can use Processing's graphics methods here
+		fill(255, 250, 240);
+
+		int xbase = 25;
+		int ybase = 50;
+
+		rect(xbase, ybase, 150, 150);
+
+		fill(0);
+		textAlign(LEFT, CENTER);
+		textSize(12);
+		text("Airport Key", xbase+35, ybase+25);
+		text("Airport", xbase+40, ybase+55);
+		text("Route", xbase+40, ybase+85);
+		
+		fill(0);
+		ellipse(xbase+25, ybase+55, 7, 7);
+		line(xbase+15, ybase+85, xbase+30, ybase+85);
+
 	}
 	
 }
